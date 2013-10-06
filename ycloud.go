@@ -109,16 +109,15 @@ func New() *YubiClient {
 
 // Why couldn't they just use a standard format?
 // https://github.com/Yubico/yubikey-val/blob/master/ykval-common.php  getUTCTimestamp()
-func parseTimestamp(t string) time.Time {
+func parseTimestamp(t string) (time.Time, error) {
 	milli, _ := strconv.Atoi(t[len(t)-3:])
 	t = t[:len(t)-3]
 	ts, err := time.Parse("2006-01-02T15:04:05Z0", t)
 	if err != nil {
 		log.Println("error parsing timestamp:", err)
-		return time.Time{}
+		return time.Time{}, err
 	}
-	// FIXME: don't think this is right, need to check against PHP
-	return ts.Add(time.Duration(milli) * time.Millisecond)
+	return ts.Add(time.Duration(milli) * time.Millisecond), nil
 }
 
 func responseFromBody(body []byte) (*VerifyResponse, error) {
@@ -143,16 +142,21 @@ func responseFromBody(body []byte) (*VerifyResponse, error) {
 		return nil, fmt.Errorf("error parsing response: %s", err)
 	}
 
+	var err error
 	r := &VerifyResponse{}
 	r.OTP = m["otp"]
 	r.Nonce = m["nonce"]
 	r.H = []byte(m["h"]) // FIXME: de-base64 ? and verify hash
-	r.T = parseTimestamp(m["t"])
+	r.T, err = parseTimestamp(m["t"])
+
+	if err != nil {
+		return nil, fmt.Errorf("error parsing response timestamp: %s", err)
+	}
+
 	r.Status = statusFromString(string(m["status"]))
-	var err error
 	r.SL, err = strconv.Atoi(m["sl"])
 	if err != nil {
-		return nil, fmt.Errorf("error parsing response: %s", err)
+		return nil, fmt.Errorf("error parsing response `sl': %s", err)
 	}
 
 	// optional responses
@@ -195,7 +199,6 @@ func (y *YubiClient) Verify(req *VerifyRequest) (*VerifyResponse, error) {
 		return nil, err
 	}
 
-	// FIXME: validate response
 	if response.OTP != req.OTP {
 		return nil, errors.New("response OTP does not match")
 	}
