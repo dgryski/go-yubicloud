@@ -171,9 +171,11 @@ func responseFromBody(body []byte) (*VerifyResponse, error) {
 	}
 
 	r.Status = statusFromString(string(m["status"]))
-	r.SL, err = strconv.Atoi(m["sl"])
-	if err != nil {
-		return nil, fmt.Errorf("error parsing response `sl': %s", err)
+	if sl, ok := m["sl"]; ok {
+		r.SL, err = strconv.Atoi(sl)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing response `sl': %s", err)
+		}
 	}
 
 	// optional responses
