@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"math/rand"
 	"net/http"
 	"net/url"
@@ -131,7 +130,6 @@ func parseTimestamp(t string) (time.Time, error) {
 	t = t[:len(t)-3]
 	ts, err := time.Parse("2006-01-02T15:04:05Z0", t)
 	if err != nil {
-		log.Println("error parsing timestamp:", err)
 		return time.Time{}, err
 	}
 	return ts.Add(time.Duration(milli) * time.Millisecond), nil
