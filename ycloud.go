@@ -5,12 +5,16 @@ package yubicloud
 import (
 	"bufio"
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha1"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/url"
+	"sort"
 	"strconv"
 	"time"
 )
@@ -71,8 +75,9 @@ var YubiCloudServers = []string{
 }
 
 type YubiClient struct {
-	ApiKey  string
-	Servers []string
+	id      string
+	apiKey  []byte
+	servers []string
 }
 
 type VerifyRequest struct {
@@ -107,6 +112,47 @@ func (v *VerifyRequest) toValues() url.Values {
 	return u
 }
 
+func isValidResponseHash(m map[string]string, key []byte) bool {
+
+	if m["h"] == "" {
+		return false
+	}
+
+	exp, err := base64.StdEncoding.DecodeString(m["h"])
+	if err != nil {
+		return false
+	}
+
+	var keys []string
+	for k, _ := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	h := hmac.New(sha1.New, key)
+	var ampersand []byte
+	for _, k := range keys {
+		if k == "h" {
+			continue
+		}
+		h.Write(ampersand)
+		h.Write([]byte(k))
+		h.Write([]byte{'='})
+		h.Write([]byte(m[k]))
+		ampersand = []byte{'&'}
+	}
+
+	return hmac.Equal(exp, h.Sum(nil))
+}
+
+func signRequest(req url.Values, key []byte) {
+	h := hmac.New(sha1.New, key)
+	u := req.Encode()
+	h.Write([]byte(u))
+	sig := h.Sum(nil)
+	req["h"] = []string{base64.StdEncoding.EncodeToString(sig)}
+}
+
 type VerifyResponse struct {
 	OTP            string
 	Nonce          string
@@ -119,8 +165,17 @@ type VerifyResponse struct {
 	SL             int
 }
 
-func New() *YubiClient {
-	return &YubiClient{Servers: YubiCloudServers}
+func New(id string, apikey string) (*YubiClient, error) {
+	y := &YubiClient{id: id, servers: YubiCloudServers}
+	if apikey != "" {
+		key, err := base64.StdEncoding.DecodeString(apikey)
+		if err != nil {
+			return nil, err
+		}
+		y.apiKey = key
+	}
+
+	return y, nil
 }
 
 // Why couldn't they just use a standard format?
@@ -135,7 +190,7 @@ func parseTimestamp(t string) (time.Time, error) {
 	return ts.Add(time.Duration(milli) * time.Millisecond), nil
 }
 
-func responseFromBody(body []byte) (*VerifyResponse, error) {
+func (y *YubiClient) responseFromBody(body []byte) (*VerifyResponse, error) {
 
 	buf := bytes.NewBuffer(body)
 
@@ -157,13 +212,16 @@ func responseFromBody(body []byte) (*VerifyResponse, error) {
 		return nil, fmt.Errorf("error parsing response: %s", err)
 	}
 
+	if !isValidResponseHash(m, y.apiKey) {
+		return nil, fmt.Errorf("invalid response signature")
+	}
+
 	var err error
 	r := &VerifyResponse{}
 	r.OTP = m["otp"]
 	r.Nonce = m["nonce"]
 	r.H = []byte(m["h"]) // FIXME: de-base64 ? and verify hash
 	r.T, err = parseTimestamp(m["t"])
-
 	if err != nil {
 		return nil, fmt.Errorf("error parsing response timestamp: %s", err)
 	}
@@ -195,9 +253,19 @@ func responseFromBody(body []byte) (*VerifyResponse, error) {
 func (y *YubiClient) Verify(req *VerifyRequest) (*VerifyResponse, error) {
 
 	// random server
-	server := y.Servers[rand.Intn(len(y.Servers))]
+	server := y.servers[rand.Intn(len(y.servers))]
 
-	resp, err := http.PostForm(server, req.toValues())
+	if req.ID == "" {
+		req.ID = y.id
+	}
+
+	values := req.toValues()
+
+	if y.apiKey != nil {
+		signRequest(values, y.apiKey)
+	}
+
+	resp, err := http.PostForm(server, values)
 
 	if err != nil {
 		return nil, err
@@ -210,7 +278,7 @@ func (y *YubiClient) Verify(req *VerifyRequest) (*VerifyResponse, error) {
 		return nil, err
 	}
 
-	response, err := responseFromBody(body)
+	response, err := y.responseFromBody(body)
 
 	if err != nil {
 		return nil, err
@@ -222,8 +290,6 @@ func (y *YubiClient) Verify(req *VerifyRequest) (*VerifyResponse, error) {
 	if response.Nonce != req.Nonce {
 		return nil, errors.New("response Nonce does not match")
 	}
-
-	// FIXME: validate signature if we have an API key
 
 	return response, nil
 }
