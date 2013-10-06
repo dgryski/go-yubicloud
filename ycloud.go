@@ -220,7 +220,7 @@ func (y *YubiClient) responseFromBody(body []byte) (*VerifyResponse, error) {
 	r := &VerifyResponse{}
 	r.OTP = m["otp"]
 	r.Nonce = m["nonce"]
-	r.H = []byte(m["h"]) // FIXME: de-base64 ? and verify hash
+	r.H, _ /* err */ = base64.StdEncoding.DecodeString(m["h"]) // error ignored here because it validated in isValidResponseHash()
 	r.T, err = parseTimestamp(m["t"])
 	if err != nil {
 		return nil, fmt.Errorf("error parsing response timestamp: %s", err)
