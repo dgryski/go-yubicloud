@@ -88,6 +88,19 @@ func (v *VerifyRequest) toValues() url.Values {
 		"otp":   {v.OTP},
 		"nonce": {v.Nonce},
 	}
+
+	if v.Timestamp {
+		u["timestamp"] = []string{"1"}
+	}
+
+	if v.SL != "" {
+		u["sl"] = []string{v.SL}
+	}
+
+	if v.Timeout != 0 {
+		u["timeout"] = []string{strconv.Itoa(v.Timeout)}
+	}
+
 	return u
 }
 
