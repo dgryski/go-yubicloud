@@ -59,6 +59,10 @@ func statusFromString(status string) Status {
 	return UNKNOWN_STATUS
 }
 
+func (s Status) IsError() bool {
+	return s == BACKEND_ERROR || s == BAD_OTP || s == BAD_SIGNATURE || s == NO_SUCH_CLIENT || s == MISSING_PARAMETER
+}
+
 var YubiCloudServers = []string{
 	"https://api.yubico.com/wsapi/2.0/verify",
 	"https://api2.yubico.com/wsapi/2.0/verify",
