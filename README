@@ -1,0 +1,7 @@
+
+Client for
+https://github.com/Yubico/yubikey-val/wiki/ValidationProtocolV20
+https://github.com/Yubico/yubikey-val/wiki/GettingStartedWritingClients
+https://github.com/Yubico/yubikey-val/wiki/ClientInfoFormat
+
+https://github.com/Yubico/yubico-perl-client/blob/master/lib/AnyEvent/Yubico.pm
