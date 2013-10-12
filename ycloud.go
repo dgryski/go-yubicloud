@@ -160,8 +160,8 @@ type VerifyResponse struct {
 	T              time.Time // timestamp
 	Status         Status
 	Timestamp      string
-	SessionCounter string
-	SessionUse     string
+	SessionCounter uint
+	SessionUse     uint
 	SL             int
 }
 
@@ -240,11 +240,19 @@ func (y *YubiClient) responseFromBody(body []byte) (*VerifyResponse, error) {
 	}
 
 	if s, ok := m["sessioncounter"]; ok {
-		r.SessionCounter = s
+		sc, err := strconv.ParseUint(s, 10, 16)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing sessioncounter: %s", err)
+		}
+		r.SessionCounter = uint(sc)
 	}
 
 	if s, ok := m["sessionuse"]; ok {
-		r.SessionUse = s
+		sc, err := strconv.ParseUint(s, 10, 8)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing sessionuse: %s", err)
+		}
+		r.SessionUse = uint(sc)
 	}
 
 	return r, nil
