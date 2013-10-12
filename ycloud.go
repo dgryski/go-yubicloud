@@ -22,43 +22,48 @@ import (
 type Status int
 
 const (
-	UNKNOWN_STATUS        = iota
-	OK                    // The OTP is valid.
-	BAD_OTP               // The OTP is invalid format.
-	REPLAYED_OTP          // The OTP has already been seen by the service.
-	BAD_SIGNATURE         // The HMAC signature verification failed.
-	MISSING_PARAMETER     // The request lacks a parameter.
-	NO_SUCH_CLIENT        // The request id does not exist.
-	OPERATION_NOT_ALLOWED // The request id is not allowed to verify OTPs.
-	BACKEND_ERROR         // Unexpected error in our server. Please contact us if you see this error.
-	NOT_ENOUGH_ANSWERS    // Server could not get requested number of syncs during before timeout
-	REPLAYED_REQUEST      // Server has seen the OTP/Nonce combination before
+	UNKNOWN_STATUS        Status = iota
+	OK                           // The OTP is valid.
+	BAD_OTP                      // The OTP is invalid format.
+	REPLAYED_OTP                 // The OTP has already been seen by the service.
+	BAD_SIGNATURE                // The HMAC signature verification failed.
+	MISSING_PARAMETER            // The request lacks a parameter.
+	NO_SUCH_CLIENT               // The request id does not exist.
+	OPERATION_NOT_ALLOWED        // The request id is not allowed to verify OTPs.
+	BACKEND_ERROR                // Unexpected error in our server. Please contact us if you see this error.
+	NOT_ENOUGH_ANSWERS           // Server could not get requested number of syncs during before timeout
+	REPLAYED_REQUEST             // Server has seen the OTP/Nonce combination before
 )
 
-func statusFromString(status string) Status {
-	switch status {
-	case "OK":
-		return OK
-	case "BAD_OTP":
-		return BAD_OTP
-	case "REPLAYED_OTP":
-		return REPLAYED_OTP
-	case "BAD_SIGNATURE":
-		return BAD_SIGNATURE
-	case "MISSING_PARAMETER":
-		return MISSING_PARAMETER
-	case "NO_SUCH_CLIENT":
-		return NO_SUCH_CLIENT
-	case "OPERATION_NOT_ALLOWED":
-		return OPERATION_NOT_ALLOWED
-	case "BACKEND_ERROR":
-		return BACKEND_ERROR
-	case "NOT_ENOUGH_ANSWERS":
-		return NOT_ENOUGH_ANSWERS
-	case "REPLAYED_REQUEST":
-		return REPLAYED_REQUEST
-	}
+var statusStrings = []string{
+	"UNKNOWN_STATUS",
+	"OK",
+	"BAD_OTP",
+	"REPLAYED_OTP",
+	"BAD_SIGNATURE",
+	"MISSING_PARAMETER",
+	"NO_SUCH_CLIENT",
+	"OPERATION_NOT_ALLOWED",
+	"BACKEND_ERROR",
+	"NOT_ENOUGH_ANSWERS",
+	"REPLAYED_REQUEST",
+}
 
+func (s Status) String() string {
+	i := int(s)
+	if i < 0 || len(statusStrings) <= i {
+		s = 0
+	}
+	return statusStrings[i]
+}
+
+func statusFromString(status string) Status {
+	for i, s := range statusStrings {
+		if status == s {
+			return Status(i)
+		}
+
+	}
 	return UNKNOWN_STATUS
 }
 
