@@ -164,7 +164,7 @@ type VerifyResponse struct {
 	H              []byte
 	T              time.Time // timestamp
 	Status         Status
-	Timestamp      string
+	Timestamp      uint
 	SessionCounter uint
 	SessionUse     uint
 	SL             int
@@ -245,7 +245,11 @@ func (y *YubiClient) responseFromBody(body []byte) (*VerifyResponse, error) {
 
 	// optional responses
 	if s, ok := m["timestamp"]; ok {
-		r.Timestamp = s
+		sc, err := strconv.ParseUint(s, 10, 32)
+		if err != nil {
+			return nil, fmt.Errorf("error parsing timestamp: %s", err)
+		}
+		r.Timestamp = uint(sc)
 	}
 
 	if s, ok := m["sessioncounter"]; ok {
