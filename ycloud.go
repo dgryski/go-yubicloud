@@ -129,7 +129,7 @@ func isValidResponseHash(m map[string]string, key []byte) bool {
 	}
 
 	var keys []string
-	for k, _ := range m {
+	for k := range m {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
