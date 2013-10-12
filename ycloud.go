@@ -166,7 +166,11 @@ type VerifyResponse struct {
 }
 
 func New(id string, apikey string) (*YubiClient, error) {
-	y := &YubiClient{id: id, servers: YubiCloudServers}
+	return NewWithServers(id, apikey, YubiCloudServers)
+}
+
+func NewWithServers(id string, apikey string, servers []string) (*YubiClient, error) {
+	y := &YubiClient{id: id, servers: servers}
 	if apikey != "" {
 		key, err := base64.StdEncoding.DecodeString(apikey)
 		if err != nil {
