@@ -206,7 +206,7 @@ func (y *YubiClient) responseFromBody(body []byte) (*VerifyResponse, error) {
 	for scanner.Scan() {
 		l := scanner.Bytes()
 		s := bytes.SplitN(l, []byte{'='}, 2)
-		if s == nil || len(s) == 0 || len(s) == 1 && len(s[0]) == 0 {
+		if s == nil || len(s) == 0 || len(s) != 2 {
 			continue
 		}
 		m[string(s[0])] = string(s[1])
