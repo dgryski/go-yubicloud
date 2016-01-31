@@ -119,8 +119,9 @@ func (v *VerifyRequest) toValues() url.Values {
 
 func isValidResponseHash(m map[string]string, key []byte) bool {
 
-	if m["h"] == "" {
-		return false
+	// if we have no API key, or no hash was provided, then it's valid
+	if key == nil || len(key) == 0 || m["h"] == "" {
+		return true
 	}
 
 	exp, err := base64.StdEncoding.DecodeString(m["h"])
