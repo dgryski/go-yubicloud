@@ -52,7 +52,7 @@ var statusStrings = []string{
 func (s Status) String() string {
 	i := int(s)
 	if i < 0 || len(statusStrings) <= i {
-		s = 0
+		i = 0
 	}
 	return statusStrings[i]
 }
