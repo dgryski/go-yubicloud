@@ -306,9 +306,11 @@ func (y *YubiClient) Verify(req *VerifyRequest) (*VerifyResponse, error) {
 		return nil, err
 	}
 
-	if response.OTP != req.OTP {
-		return nil, errors.New("response OTP does not match")
+	// Invalid values don't return the Nonce
+	if response.Nonce == "" && response.Status.IsError() {
+		return response, nil
 	}
+
 	if response.Nonce != req.Nonce {
 		return nil, errors.New("response Nonce does not match")
 	}
