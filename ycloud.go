@@ -306,6 +306,11 @@ func (y *YubiClient) Verify(req *VerifyRequest) (*VerifyResponse, error) {
 		return nil, err
 	}
 
+	// Invalid values don't return the Nonce
+	if response.Nonce == "" && response.Status.IsError() {
+		return response, nil
+	}
+
 	if response.Nonce != req.Nonce {
 		return nil, errors.New("response Nonce does not match")
 	}
