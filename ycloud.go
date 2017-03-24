@@ -236,7 +236,7 @@ func (y *YubiClient) responseFromBody(body []byte) (*VerifyResponse, error) {
 		return nil, fmt.Errorf("error parsing response timestamp: %s", err)
 	}
 
-	r.Status = statusFromString(string(m["status"]))
+	r.Status = statusFromString(m["status"])
 	if sl, ok := m["sl"]; ok {
 		r.SL, err = strconv.Atoi(sl)
 		if err != nil {
