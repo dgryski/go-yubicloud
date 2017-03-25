@@ -120,7 +120,7 @@ func (v *VerifyRequest) toValues() url.Values {
 func isValidResponseHash(m map[string]string, key []byte) bool {
 
 	// if we have no API key, or no hash was provided, then it's valid
-	if key == nil || len(key) == 0 || m["h"] == "" {
+	if len(key) == 0 || m["h"] == "" {
 		return true
 	}
 
@@ -212,7 +212,7 @@ func (y *YubiClient) responseFromBody(body []byte) (*VerifyResponse, error) {
 	for scanner.Scan() {
 		l := scanner.Bytes()
 		s := bytes.SplitN(l, []byte{'='}, 2)
-		if s == nil || len(s) == 0 || len(s) != 2 {
+		if len(s) != 2 {
 			continue
 		}
 		m[string(s[0])] = string(s[1])
@@ -236,7 +236,7 @@ func (y *YubiClient) responseFromBody(body []byte) (*VerifyResponse, error) {
 		return nil, fmt.Errorf("error parsing response timestamp: %s", err)
 	}
 
-	r.Status = statusFromString(string(m["status"]))
+	r.Status = statusFromString(m["status"])
 	if sl, ok := m["sl"]; ok {
 		r.SL, err = strconv.Atoi(sl)
 		if err != nil {
